@@ -8,4 +8,8 @@ public class KafkaRecord {
     public KafkaRecord(ConsumerRecord<String, String> record) {
         this.record = record;
     }
+
+    public boolean hasSourceId(String message) {
+        return record.value().contains(message);
+    }
 }

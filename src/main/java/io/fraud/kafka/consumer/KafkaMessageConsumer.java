@@ -6,11 +6,15 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.awaitility.Awaitility;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.Collections.singletonList;
 
 public class KafkaMessageConsumer {
 
@@ -33,6 +37,10 @@ public class KafkaMessageConsumer {
         return receivedRecords;
     }
 
+    public Collection<KafkaRecord> getReceivedRecords() {
+        return receivedRecords;
+    }
+
     public Properties createConsumerProperties(String bootStrapServer) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServer);
@@ -44,6 +52,26 @@ public class KafkaMessageConsumer {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return props;
+    }
+
+    public void subscribe(String topic) {
+        consumer.subscribe(singletonList(topic));
+
+    }
+
+    public Collection<KafkaRecord> waitForMessages() {
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .until(() -> consume().size() > 0);
+        return getReceivedRecords();
+
+    }
+
+    public KafkaRecord waitForMessages(String message) {
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .until(() -> consume().stream().anyMatch(it -> it.hasSourceId(message)));
+        return getReceivedRecords().stream().filter(it -> it.hasSourceId(message)).findFirst().orElseThrow(()
+                -> new RuntimeException("No such record sourceId" + message));
+
     }
 
 }
