@@ -1,0 +1,56 @@
+== Kafka fraud detector
+
+1. Create network
+
+----
+docker network create kafka-network
+----
+
+2. Run kafka
+
+----
+docker-compose -f docker-compose.kafka.yml up
+----
+
+Check the cluster is up and running (wait for "started" to show up):
+
+----
+docker-compose -f docker-compose.kafka.yml logs -f broker | grep "started"
+----
+
+2. Run app
+
+----
+docker-compose -f docker-compose.prod.yml up
+----
+
+Use console consumer:
+
+- queuing.transactions: raw generated transactions
+- streaming.transactions.legit: legit transactions
+- streaming.transactions.fraud: suspicious transactions
+- streaming.transactions.error: error transactions
+
+----
+docker exec -it root_broker_1 /bin/bash
+----
+
+List kafka topics
+
+----
+kafka-topics --list --bootstrap-server localhost:9092
+----
+
+Consume messages from topic
+
+----
+kafka-console-consumer --bootstrap-server localhost:9092 --from-beginning --topic T
+----
+
+Console producer:
+
+----
+kafka-console-producer --broker-list localhost:9092 --topic test
+----
+
+
