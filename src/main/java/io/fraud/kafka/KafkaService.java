@@ -2,6 +2,7 @@ package io.fraud.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fraud.kafka.consumer.KafkaMessageConsumer;
+import io.fraud.kafka.messages.GeneratorMessage;
 import io.fraud.kafka.producer.KafkaMessageProducer;
 import lombok.SneakyThrows;
 import org.aeonbits.owner.ConfigFactory;
@@ -10,6 +11,7 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 public class KafkaService {
     private final KafkaMessageProducer kafkaMessageProducer;
     private final KafkaMessageConsumer messageConsumer;
+    private final TestDataGenerator testDataGenerator = new TestDataGenerator();
     ObjectMapper objectMapper = new ObjectMapper();
     ProjectConfig projectConfig = ConfigFactory.create(ProjectConfig.class);
 
@@ -37,10 +39,16 @@ public class KafkaService {
     }
 
     @SneakyThrows
+    public GeneratorMessage send() {
+        String message = testDataGenerator.generate("data/message.twig");
+        send(projectConfig.queuinfTopic(), message);
+        return objectMapper.readValue(message, GeneratorMessage.class);
+    }
+
+    @SneakyThrows
     public RecordMetadata send(Object message) {
         return kafkaMessageProducer.send(projectConfig.queuinfTopic(), objectMapper.writeValueAsString(message));
     }
-
 
     public void subscribe(String topic) {
         messageConsumer.subscribe(topic);
@@ -55,7 +63,6 @@ public class KafkaService {
     public void subscribeFraud() {
         subscribe(projectConfig.fraudTopic());
     }
-
 
     public KafkaRecord waitForMessages(String message) {
         return messageConsumer.waitForMessages(message);
